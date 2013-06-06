@@ -309,7 +309,9 @@ static int mmc_read_switch(struct mmc_card *card)
 	if (status[13] & UHS_SDR50_BUS_SPEED)
 		card->sw_caps.hs_max_dtr = 50000000;
 
-	if (card->scr.sda_spec3) {
+    //mask the the SD Ver3.0 support,modifyed by xbw at 2012-8-09
+	//if (card->scr.sda_spec3) {
+	if(0) {
 		card->sw_caps.sd3_bus_mode = status[13];
 
 		/* Find out Driver Strengths supported by the card */
@@ -718,8 +720,13 @@ int mmc_sd_get_cid(struct mmc_host *host, u32 ocr, u32 *cid, u32 *rocr)
 
 try_again:
 	err = mmc_send_app_op_cond(host, ocr, rocr);
-	if (err)
+	if (err) {
+#if defined(CONFIG_SDMMC_RK29) && !defined(CONFIG_SDMMC_RK29_OLD)
+	    printk(KERN_WARNING "%s..%d..  ====*Identify the card as SD , but OCR error, so fail to initialize.[%s]\n", \
+	        __FUNCTION__, __LINE__, mmc_hostname(host));
+#endif
 		return err;
+	}
 
 	/*
 	 * In case CCS and S18A in the response is set, start Signal Voltage
@@ -764,6 +771,9 @@ int mmc_sd_setup_card(struct mmc_host *host, struct mmc_card *card,
 	bool reinit)
 {
 	int err;
+#ifdef CONFIG_MMC_PARANOID_SD_INIT
+	int retries;
+#endif
 
 	if (!reinit) {
 		/*
@@ -790,7 +800,33 @@ int mmc_sd_setup_card(struct mmc_host *host, struct mmc_card *card,
 		/*
 		 * Fetch switch information from card.
 		 */
+#ifdef CONFIG_MMC_PARANOID_SD_INIT
+		for (retries = 1; retries <= 3; retries++) {
+			err = mmc_read_switch(card);
+			if (!err) {
+				if (retries > 1) {
+					printk(KERN_WARNING
+					       "%s: recovered\n", 
+					       mmc_hostname(host));
+				}
+				break;
+			} else {
+				printk(KERN_WARNING
+				       "%s: read switch failed (attempt %d)\n",
+				       mmc_hostname(host), retries);
+
+#if defined(CONFIG_SDMMC_RK29) && !defined(CONFIG_SDMMC_RK29_OLD)
+				if(0 == host->re_initialized_flags)
+				{
+					 break; //Added by xbw at 2011-06-21
+				}
+#endif
+			}
+		}
+#else
 		err = mmc_read_switch(card);
+#endif
+
 		if (err)
 			return err;
 	}
@@ -837,6 +873,11 @@ unsigned mmc_sd_get_max_clock(struct mmc_card *card)
 		if (max_dtr > card->sw_caps.hs_max_dtr)
 			max_dtr = card->sw_caps.hs_max_dtr;
 	} else if (max_dtr > card->csd.max_dtr) {
+
+#if defined(CONFIG_SDMMC_RK29) && !defined(CONFIG_SDMMC_RK29_OLD)
+        //in order to expand the compatibility of card. Added by xbw@2011-03-21
+	    card->csd.max_dtr = (card->csd.max_dtr > SD_FPP_FREQ) ? SD_FPP_FREQ : (card->csd.max_dtr); 
+#endif
 		max_dtr = card->csd.max_dtr;
 	}
 
@@ -989,18 +1030,45 @@ static void mmc_sd_remove(struct mmc_host *host)
  */
 static void mmc_sd_detect(struct mmc_host *host)
 {
-	int err;
+	int err = 0;
+#ifdef CONFIG_MMC_PARANOID_SD_INIT
+        int retries = 5;
+#endif
 
 	BUG_ON(!host);
 	BUG_ON(!host->card);
-
+       
 	mmc_claim_host(host);
 
 	/*
 	 * Just check if our card has been removed.
 	 */
-	err = mmc_send_status(host->card, NULL);
+#ifdef CONFIG_MMC_PARANOID_SD_INIT
+	while(retries) {
+		err = mmc_send_status(host->card, NULL);
+		if (err) {
+			retries--;
 
+#if defined(CONFIG_SDMMC_RK29) && !defined(CONFIG_SDMMC_RK29_OLD)
+		  if(0 == host->re_initialized_flags)
+			{
+				 retries = 0;
+				 break; //Added by xbw at 2011-06-21
+			}
+#endif
+
+			udelay(5);
+			continue;
+		}
+		break;
+	}
+	if (!retries) {
+		printk(KERN_ERR "%s(%s): Unable to re-detect card (%d)\n",
+		       __func__, mmc_hostname(host), err);
+	}
+#else
+	err = mmc_send_status(host->card, NULL);
+#endif
 	mmc_release_host(host);
 
 	if (err) {
@@ -1039,12 +1107,38 @@ static int mmc_sd_suspend(struct mmc_host *host)
 static int mmc_sd_resume(struct mmc_host *host)
 {
 	int err;
+#ifdef CONFIG_MMC_PARANOID_SD_INIT
+	int retries;
+#endif
 
 	BUG_ON(!host);
 	BUG_ON(!host->card);
 
 	mmc_claim_host(host);
+#ifdef CONFIG_MMC_PARANOID_SD_INIT
+	retries = 5;
+	while (retries) {
+		err = mmc_sd_init_card(host, host->ocr, host->card);
+
+		if (err) {
+			printk(KERN_ERR "%s: Re-init card rc = %d (retries = %d)\n",
+			       mmc_hostname(host), err, retries);
+			mdelay(5);
+			retries--;
+
+#if defined(CONFIG_SDMMC_RK29) && !defined(CONFIG_SDMMC_RK29_OLD)
+			if(0 == host->re_initialized_flags)
+			{
+				 break; //Added by xbw at 2011-06-21
+			}
+#endif
+			continue;
+		}
+		break;
+	}
+#else
 	err = mmc_sd_init_card(host, host->ocr, host->card);
+#endif
 	mmc_release_host(host);
 
 	return err;
@@ -1096,6 +1190,13 @@ int mmc_attach_sd(struct mmc_host *host)
 {
 	int err;
 	u32 ocr;
+#if defined(CONFIG_SDMMC_RK29) && !defined(CONFIG_SDMMC_RK29_OLD)
+	int retry_times = 3;
+#endif
+
+#ifdef CONFIG_MMC_PARANOID_SD_INIT
+	int retries;
+#endif
 
 	BUG_ON(!host);
 	WARN_ON(!host->claimed);
@@ -1110,9 +1211,16 @@ int mmc_attach_sd(struct mmc_host *host)
 		host->ops->enable_preset_value(host, false);
 
 	err = mmc_send_app_op_cond(host, 0, &ocr);
+#if defined(CONFIG_SDMMC_RK29) && !defined(CONFIG_SDMMC_RK29_OLD)	
+	if (err)
+		return 0xFF;//return err; Modifyed by xbw at 2011-11-17
+		
+    printk(KERN_INFO "\n%s..%d..  ===== Begin to identify card as SD-card. [%s]\n",\
+        __FUNCTION__, __LINE__, mmc_hostname(host));
+#else
 	if (err)
 		return err;
-
+#endif
 	mmc_sd_attach_bus_ops(host);
 	if (host->ocr_avail_sd)
 		host->ocr_avail = host->ocr_avail_sd;
@@ -1160,15 +1268,65 @@ int mmc_attach_sd(struct mmc_host *host)
 	/*
 	 * Detect and init the card.
 	 */
+#ifdef CONFIG_MMC_PARANOID_SD_INIT
+	retries = 5;
+	while (retries) {
+		err = mmc_sd_init_card(host, host->ocr, NULL);
+		if (err) {
+			retries--;
+
+	#if defined(CONFIG_SDMMC_RK29) && !defined(CONFIG_SDMMC_RK29_OLD)
+			if(0 == host->re_initialized_flags)
+			{
+				 retries = 0;
+				 break; //Added by xbw at 2011-06-21
+			}
+	#endif
+			continue;
+		}
+		break;
+	}
+
+	if (!retries) {
+		printk(KERN_ERR "%s: mmc_sd_init_card() failure (err = %d)\n",
+		       mmc_hostname(host), err);
+		goto err;
+	}
+#else
 	err = mmc_sd_init_card(host, host->ocr, NULL);
 	if (err)
 		goto err;
+#endif
 
 	mmc_release_host(host);
+
+#if defined(CONFIG_SDMMC_RK29) && !defined(CONFIG_SDMMC_RK29_OLD)
+//modifyed by xbw at 2011--04-11
+Retry_add:
+	err = mmc_add_card(host->card);
+	mmc_claim_host(host);
+	if (err)
+	{
+	    //retry add the card; Added by xbw
+        if((--retry_times >= 0))
+        {        
+            printk(KERN_WARNING "\n%s..%s..%d   ****error in add partition, so retry.  [%s]\n",__FUNCTION__,__FILE__,__LINE__, mmc_hostname(host));   
+            /* sleep some time */
+            set_current_state(TASK_INTERRUPTIBLE);
+            schedule_timeout(HZ/2);
+            
+            goto Retry_add;
+        }
+
+		goto remove_card;
+    
+	}
+#else
 	err = mmc_add_card(host->card);
 	mmc_claim_host(host);
 	if (err)
 		goto remove_card;
+#endif
 
 	return 0;
 

@@ -177,6 +177,10 @@ not_angel:
 #endif
 
 		bl	cache_on
+#ifdef CONFIG_ARCH_RK29
+		bl	cache_off
+		bl	cache_on
+#endif
 
 restart:	adr	r0, LC0
 		ldmia	r0, {r1, r2, r3, r6, r10, r11, r12}
@@ -657,6 +661,8 @@ proc_types:
 @		b	__arm6_mmu_cache_off
 @		b	__armv3_mmu_cache_flush
 
+#if !defined(CONFIG_CPU_V7)
+		/* This collides with some V7 IDs, preventing correct detection */
 		.word	0x00000000		@ old ARM ID
 		.word	0x0000f000
 		mov	pc, lr
@@ -665,6 +671,7 @@ proc_types:
  THUMB(		nop				)
 		mov	pc, lr
  THUMB(		nop				)
+#endif
 
 		.word	0x41007000		@ ARM7/710
 		.word	0xfff8fe00

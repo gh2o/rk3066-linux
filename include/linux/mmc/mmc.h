@@ -140,6 +140,16 @@ static inline bool mmc_op_multi(u32 opcode)
 #define R1_SWITCH_ERROR		(1 << 7)	/* sx, c */
 #define R1_APP_CMD		(1 << 5)	/* sr, c */
 
+#define R1_STATE_IDLE	0
+#define R1_STATE_READY	1
+#define R1_STATE_IDENT	2
+#define R1_STATE_STBY	3
+#define R1_STATE_TRAN	4
+#define R1_STATE_DATA	5
+#define R1_STATE_RCV	6
+#define R1_STATE_PRG	7
+#define R1_STATE_DIS	8
+
 /*
  * MMC/SD in SPI mode reports R1 status always, and R2 for SEND_STATUS
  * R1 is the low order byte; R2 is the next highest byte, when present.
@@ -326,6 +336,25 @@ struct _mmc_csd {
 #define MMC_SWITCH_MODE_SET_BITS	0x01	/* Set bits which are 1 in value */
 #define MMC_SWITCH_MODE_CLEAR_BITS	0x02	/* Clear bits which are 1 in value */
 #define MMC_SWITCH_MODE_WRITE_BYTE	0x03	/* Set target to value */
+
+
+/*
+* some limit value of SDMMC about protocol  ; Added by xbw at 2011-03-21
+*/
+#define FOD_FREQ              (300000)    //  in the identify stage, unit: hz,  max is 400Khz,
+                                       //  the least frequency is FREQ_HCLK_MAX/8
+#define SD_FPP_FREQ           (24000000)  //   normal sd freq,  25Mhz
+
+#if defined(CONFIG_ARCH_RK2928)
+//In rk2926 machine,very prone to occur data-timeout-error,the machine reduces the frequency.
+#define SDHC_FPP_FREQ         (39500000)  // SDHC in the highspeed. unit is hz,  max is 50Mhz.
+#else
+#define SDHC_FPP_FREQ         (49500000)  // SDHC in the highspeed. unit is hz,  max is 50Mhz.
+#endif
+#define MMC_FPP_FREQ          (19000000)  // MMC freq, unit is hz,   max is 20MHz
+#define MMCHS_26_FPP_FREQ     (24000000)  //  highspeed mode support 26M  HS-MMC, unit is hz, max is 26Mhz, 
+#define MMCHS_52_FPP_FREQ     (49500000)  //  highspeed support 52M HS-MMC,   unit is hz,   max is 52Mhz,
+
 
 #endif  /* MMC_MMC_PROTOCOL_H */
 

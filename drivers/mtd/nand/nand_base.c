@@ -1492,8 +1492,15 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 			else
 				ret = chip->ecc.read_page(mtd, chip, bufpoi,
 							  page);
+#ifdef CONFIG_MTD_NAND_RK29
+            extern int rk29_nand_refresh(struct mtd_info *mtd, int srcAddr);
+		    if(ret == -1)
+		        ret=rk29_nand_refresh(mtd, page<<chip->page_shift);
+#endif              
 			if (ret < 0)
+			{
 				break;
+			}
 
 			/* Transfer not aligned data */
 			if (!aligned) {
@@ -3080,6 +3087,8 @@ ident_done:
 			break;
 	}
 
+	chip->options |= busw;
+	
 	/*
 	 * Check, if buswidth is correct. Hardware drivers should set
 	 * chip correct !
@@ -3221,6 +3230,44 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
 	return 0;
 }
 EXPORT_SYMBOL(nand_scan_ident);
+
+static void nand_panic_wait(struct mtd_info *mtd)
+{
+	struct nand_chip *chip = mtd->priv;
+	int i;
+
+	if (chip->state != FL_READY)
+		for (i = 0; i < 40; i++) {
+			if (chip->dev_ready(mtd))
+				break;
+			mdelay(10);
+		}
+	chip->state = FL_READY;
+}
+
+static int nand_panic_write(struct mtd_info *mtd, loff_t to, size_t len,
+			    size_t *retlen, const u_char *buf)
+{
+	struct nand_chip *chip = mtd->priv;
+	int ret;
+
+	/* Do not allow reads past end of device */
+	if ((to + len) > mtd->size)
+		return -EINVAL;
+	if (!len)
+		return 0;
+
+	nand_panic_wait(mtd);
+
+	chip->ops.len = len;
+	chip->ops.datbuf = (uint8_t *)buf;
+	chip->ops.oobbuf = NULL;
+
+	ret = nand_do_write_ops(mtd, to, &chip->ops);
+
+	*retlen = chip->ops.retlen;
+	return ret;
+}
 
 
 /**
@@ -3465,6 +3512,7 @@ int nand_scan_tail(struct mtd_info *mtd)
 	mtd->panic_write = panic_nand_write;
 	mtd->read_oob = nand_read_oob;
 	mtd->write_oob = nand_write_oob;
+	mtd->panic_write = nand_panic_write;
 	mtd->sync = nand_sync;
 	mtd->lock = NULL;
 	mtd->unlock = NULL;

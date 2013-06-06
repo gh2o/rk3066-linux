@@ -181,6 +181,10 @@
 /* BCM63xx family SoCs */
 #define PORT_BCM63XX	89
 
+#define PORT_RK2818	90
+
+#define PORT_RK29	90
+
 /* Aeroflex Gaisler GRLIB APBUART */
 #define PORT_APBUART    90
 
@@ -245,6 +249,7 @@ struct uart_ops {
 	void		(*pm)(struct uart_port *, unsigned int state,
 			      unsigned int oldstate);
 	int		(*set_wake)(struct uart_port *, unsigned int state);
+	void		(*wake_peer)(struct uart_port *);
 
 	/*
 	 * Return a string describing the type of the port
