@@ -1782,7 +1782,6 @@ void __init board_clock_init(void)
 #endif
 
 #ifdef OMEGAMOON_CHANGED
-	dump_dvfs_map_on_console();
 #ifdef OMEGAMOON_CHANGED_timing	
 	printk("Omegamoon >> Current GPU frequency is %luMHz\n", clk_get_rate(clk_get(NULL, "gpu"))/1000000);
 	clk_set_rate(clk_get(NULL, "gpu"), 533 * 1000 * 1000);
