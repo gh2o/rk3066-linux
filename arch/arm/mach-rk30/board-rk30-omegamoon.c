@@ -78,9 +78,7 @@
 #include "../../../drivers/staging/android/timed_gpio.h"
 #endif
 
-#ifdef CONFIG_RK_REMOTECTL
 #include <mach/remotectl.h>
-#endif
 #if defined(CONFIG_MT6620)
 #include <linux/gps.h>
 #endif
@@ -1139,28 +1137,10 @@ static struct platform_device rockchip_hdmi_audio = {
 	.id	= -1,
 };
 #endif
-#ifdef CONFIG_RK_REMOTECTL
-
-void rk30_remotectl_iomux(void)
-{
-	;
-}
-
-struct RKxx_remotectl_platform_data rk30_remotectl_pdata = {
-    .gpio	=   RK30_PIN6_PA1, 
-    .wakeup	= 1,
-    .rep    = 0,
-    .set_iomux = rk30_remotectl_iomux,    
-};
-
-static struct platform_device rk30_device_remotectl = {
-	.name		= "rkxx-remotectl",
+static struct platform_device rockchip_dummy_driver = {
+	.name		= "rockchip-dummy-driver",
 	.id		= -1,
-	.dev		= {
-		.platform_data	= &rk30_remotectl_pdata,
-	},
 };
-#endif
 #ifdef CONFIG_RK30_PWM_REGULATOR
 const static int pwm_voltage_map[] = {
         1000000, 1025000, 1050000, 1075000, 1100000, 1125000, 
@@ -1349,9 +1329,7 @@ static struct platform_device *devices[] __initdata = {
 #if defined(CONFIG_BATTERY_RK30_ADC)||defined(CONFIG_BATTERY_RK30_ADC_FAC)
  	&rk30_device_adc_battery,
 #endif
-#ifdef CONFIG_RK_REMOTECTL	
-    &rk30_device_remotectl,
-#endif
+    &rockchip_dummy_driver,
 #ifdef CONFIG_SND_SOC_RK_HDMI_CODEC
 	&rockchip_hdmi_codec,
 #endif
