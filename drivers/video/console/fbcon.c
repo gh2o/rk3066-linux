@@ -3611,7 +3611,7 @@ static int __init fb_console_init(void)
 	return 0;
 }
 
-module_init(fb_console_init);
+subsys_initcall(fb_console_init);
 
 #ifdef MODULE
 
