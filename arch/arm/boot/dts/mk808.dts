@@ -23,5 +23,9 @@
 			status = "okay";
 		};
 
+		usb: usb@101c0000 {
+			status = "okay";
+		};
+
 	};
 };

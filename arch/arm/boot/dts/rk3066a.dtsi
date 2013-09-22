@@ -386,5 +386,13 @@
 
 			status = "disabled";
 		};
+
+		usb: usb@101c0000 {
+			compatible = "snps,dwc2";
+			reg = <0x101c0000 0x40000>;
+			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
+
+			status = "disabled";
+		};
 	};
 };
