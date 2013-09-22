@@ -11,6 +11,7 @@ config ARCH_ROCKCHIP
 	select COMMON_CLK
 	select GENERIC_CLOCKEVENTS
 	select DW_APB_TIMER_OF
+	select VIRT_TO_BUS
 	help
 	  Support for Rockchip's Cortex-A9 Single-to-Quad-Core-SoCs
 	  containing the RK2928, RK30xx and RK31xx series.
