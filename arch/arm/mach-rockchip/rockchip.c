@@ -21,9 +21,30 @@
 #include <linux/irqchip.h>
 #include <linux/dw_apb_timer.h>
 #include <linux/clk-provider.h>
+#include <linux/platform_device.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 #include <asm/hardware/cache-l2x0.h>
+
+static struct resource dwc_otg_resources[] = {
+	{
+		.start = 0x101c0000,
+		.end = 0x101c0000 + SZ_256K - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.start = 17,
+		.end = 17,
+		.flags = IORESOURCE_IRQ,
+	}
+};
+
+static struct platform_device dwc_otg_device = {
+	.name = "dwc_otg",
+	.id = -1,
+	.resource = dwc_otg_resources,
+	.num_resources = ARRAY_SIZE(dwc_otg_resources),
+};
 
 static void __init rockchip_timer_init(void)
 {
@@ -35,6 +56,7 @@ static void __init rockchip_dt_init(void)
 {
 	l2x0_of_init(0, ~0UL);
 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+	platform_device_register(&dwc_otg_device);
 }
 
 static const char * const rockchip_board_dt_compat[] = {
