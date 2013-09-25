@@ -1034,21 +1034,11 @@ static struct pci_driver dwc_otg_driver = {
 		   },
 };
 #elif defined(PLATFORM_INTERFACE)
-static struct platform_device_id platform_ids[] = {
-        {
-              .name = "bcm2708_usb",
-              .driver_data = (kernel_ulong_t) 0xdeadbeef,
-        },
-        { /* end: all zeroes */ }
-};
-MODULE_DEVICE_TABLE(platform, platform_ids);
-
 static struct platform_driver dwc_otg_driver = {
 	.driver = {
 		.name = (char *)dwc_driver_name,
-		},
-        .id_table = platform_ids,
-                        
+		.owner = THIS_MODULE,
+	},
 	.probe = dwc_otg_driver_probe,
 	.remove = dwc_otg_driver_remove,
         // no 'shutdown', 'suspend', 'resume', 'suspend_late' or 'resume_early' 
