@@ -37,7 +37,6 @@
 #include "dwc_otg_mphi_fix.h"
 
 #include <linux/jiffies.h>
-#include <mach/hardware.h>
 #include <asm/fiq.h>
 
 

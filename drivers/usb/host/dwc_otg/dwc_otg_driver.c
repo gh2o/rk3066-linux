@@ -241,9 +241,9 @@ static struct dwc_otg_driver_module_params dwc_otg_module_params = {
 };
 
 //Global variable to switch the fiq fix on or off (declared in bcm2708.c)
-extern bool fiq_fix_enable;
+const bool fiq_fix_enable = false;
 // Global variable to enable the split transaction fix
-bool fiq_split_enable = true;
+const bool fiq_split_enable = false;
 //Global variable to switch the nak holdoff on or off
 bool nak_holdoff_enable = true;
 
@@ -1071,11 +1071,6 @@ static int __init dwc_otg_driver_init(void)
 	int error;
         struct device_driver *drv;
 
-	if(fiq_split_enable && !fiq_fix_enable) {
-		printk(KERN_WARNING "dwc_otg: fiq_split_enable was set without fiq_fix_enable! Correcting.\n");
-		fiq_fix_enable = 1;
-	}
-
 	printk(KERN_INFO "%s: version %s (%s bus)\n", dwc_driver_name,
 	       DWC_DRIVER_VERSION,
 #ifdef LM_INTERFACE
@@ -1378,12 +1373,8 @@ MODULE_PARM_DESC(otg_ver, "OTG revision supported 0=OTG 1.3 1=OTG 2.0");
 module_param(microframe_schedule, bool, 0444);
 MODULE_PARM_DESC(microframe_schedule, "Enable the microframe scheduler");
 
-module_param(fiq_fix_enable, bool, 0444);
-MODULE_PARM_DESC(fiq_fix_enable, "Enable the fiq fix");
 module_param(nak_holdoff_enable, bool, 0444);
 MODULE_PARM_DESC(nak_holdoff_enable, "Enable the NAK holdoff");
-module_param(fiq_split_enable, bool, 0444);
-MODULE_PARM_DESC(fiq_split_enable, "Enable the FIQ fix on split transactions");
 
 /** @page "Module Parameters"
  *
