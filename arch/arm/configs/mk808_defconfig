@@ -1283,35 +1283,7 @@ CONFIG_RTC_LIB=y
 #
 # Microsoft Hyper-V guest support
 #
-CONFIG_STAGING=y
-# CONFIG_USBIP_CORE is not set
-# CONFIG_W35UND is not set
-# CONFIG_PRISM2_USB is not set
-# CONFIG_ECHO is not set
-# CONFIG_ASUS_OLED is not set
-# CONFIG_R8712U is not set
-# CONFIG_TRANZPORT is not set
-# CONFIG_ZSMALLOC is not set
-# CONFIG_BCM_WIMAX is not set
-# CONFIG_FT1000 is not set
-
-#
-# Speakup console speech
-#
-# CONFIG_SPEAKUP is not set
-# CONFIG_STAGING_MEDIA is not set
-
-#
-# Android
-#
-# CONFIG_ANDROID is not set
-# CONFIG_USB_WPAN_HCD is not set
-# CONFIG_WIMAX_GDM72XX is not set
-# CONFIG_CED1401 is not set
-# CONFIG_DGRP is not set
-CONFIG_USB_DWC2=y
-# CONFIG_USB_DWC2_DEBUG is not set
-# CONFIG_USB_DWC2_TRACK_MISSED_SOFS is not set
+# CONFIG_STAGING is not set
 CONFIG_CLKDEV_LOOKUP=y
 CONFIG_HAVE_CLK_PREPARE=y
 CONFIG_COMMON_CLK=y
