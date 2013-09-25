@@ -33,8 +33,8 @@ static struct resource dwc_otg_resources[] = {
 		.flags = IORESOURCE_MEM,
 	},
 	{
-		.start = 17,
-		.end = 17,
+		.start = 49,
+		.end = 49,
 		.flags = IORESOURCE_IRQ,
 	}
 };
