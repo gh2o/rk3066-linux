@@ -1183,6 +1183,7 @@ CONFIG_USB_DEFAULT_PERSIST=y
 # CONFIG_USB_OHCI_HCD is not set
 # CONFIG_USB_SL811_HCD is not set
 # CONFIG_USB_R8A66597_HCD is not set
+CONFIG_USB_DWCOTG=y
 
 #
 # USB Device Class drivers
